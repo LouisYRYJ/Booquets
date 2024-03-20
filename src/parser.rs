@@ -177,10 +177,8 @@ impl ptree::TreeItem for TreeNodeQuery {
 }
 
 // Skips if we are pushing whitespace before or after adding +, *, (, ), final token
-fn clean_push(tokens: &mut VecDeque<TreeNodeQuery>, current_token: &mut String) {
-    if current_token.trim().to_string() == "" {
-        ()
-    } else {
+fn trim_whitespace(tokens: &mut VecDeque<TreeNodeQuery>, current_token: &mut String) {
+    if !current_token.trim().is_empty() {
         tokens.push_back(TreeNodeQuery::new(current_token.trim().to_string()));
         current_token.clear();
     }
@@ -194,13 +192,13 @@ fn tokenize(args: &str) -> VecDeque<TreeNodeQuery> {
         match current_character {
             '+' | '*' => {
                 if !current_token.is_empty() {
-                    clean_push(&mut output, &mut current_token);
+                    trim_whitespace(&mut output, &mut current_token);
                 }
                 output.push_back(TreeNodeQuery::new(current_character.to_string()));
             }
             '(' | ')' => {
                 if !current_token.is_empty() {
-                    clean_push(&mut output, &mut current_token);
+                    trim_whitespace(&mut output, &mut current_token);
                 }
                 output.push_back(TreeNodeQuery::new(current_character.to_string()));
             }
@@ -210,11 +208,10 @@ fn tokenize(args: &str) -> VecDeque<TreeNodeQuery> {
         }
     }
     if !current_token.is_empty() {
-        clean_push(&mut output, &mut current_token);
+        trim_whitespace(&mut output, &mut current_token);
     }
     output
 }
-
 
 //parser logic
 fn parser_or(tokens: &mut VecDeque<TreeNodeQuery>) -> TreeNodeQuery {
@@ -282,7 +279,6 @@ mod parser_tests {
     use crate::parser::*;
 
     #[test]
-    #[ignore]
     fn does_tokenize() {
         let test_string = String::from(" (Word 1 + word2 )  * and maybe *   (  this is + asds ) ");
         let test_list = tokenize(&test_string);
@@ -308,23 +304,44 @@ mod parser_tests {
     }
 
     #[test]
-    fn update_tree() {
-        let test_string = String::from(" (A + B) *( C+F) *  (D  + E)  ");
+    fn update_tree_not_found() {
+        let test_string = String::from(" (A + B) * ( C+F) *  (D  + E)  ");
         let mut test_list = tokenize(&test_string);
         let mut tree = parser_or(&mut test_list);
-        print!("\n");
+        println!("\n Tree before updating (A is not found):");
         ptree::print_tree(&tree).unwrap();
         while tree.update_tree("A", false) {}
+        println!("\n Tree after updating:");
         ptree::print_tree(&tree).unwrap();
     }
 
     #[test]
-    fn find_first_leaf() {
-        let test_string = String::from(" (A + B) *( C+F) *  (D  + E) ");
+    fn print_tree() {
+        let test_string = String::from(" ((A + B) + ( A*C)) +  ((A+C) *B)  ");
         let mut test_list = tokenize(&test_string);
-        let tree = parser_or(&mut test_list);
-        print!("\n");
-        let first_node = tree.breadth_first_node().unwrap();
-        assert_eq!(first_node, "D");
+        let mut tree = parser_or(&mut test_list);
+        ptree::print_tree(&tree).unwrap();
+
+        #[test]
+        fn update_tree_found() {
+            let test_string = String::from(" (A + B) +( C * E)  ");
+            let mut test_list = tokenize(&test_string);
+            let mut tree = parser_or(&mut test_list);
+            println!("\n Tree before updating (A is found):");
+            ptree::print_tree(&tree).unwrap();
+            while tree.update_tree("A", true) {}
+            println!("\n Tree after updating:");
+            ptree::print_tree(&tree).unwrap();
+        }
+
+        #[test]
+        fn find_first_leaf() {
+            let test_string = String::from(" (A + B) *( C+F) *  (D  + E) ");
+            let mut test_list = tokenize(&test_string);
+            let tree = parser_or(&mut test_list);
+            print!("\n");
+            let first_node = tree.breadth_first_node().unwrap();
+            assert_eq!(first_node, "D");
+        }
     }
 }
