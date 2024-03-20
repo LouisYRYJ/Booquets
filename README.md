@@ -89,6 +89,6 @@ searching for A is better than B, although B is the closest leaf. To be really s
    │  └─ starry night
    └─ Dutch painter
 ```
-In this example we are done, but more generally we have to repeatedly update the tree until either "color" does not appear in the tree anymore or "color" is only leaf left.
+In this example we are done, but more generally we have to repeatedly update the tree until either "color" does not appear in the tree anymore or "color" is the only leaf left.
 
-4. As described above, we check if there is only one leaf left. In that case we are done. Otherwise we go back to 1. and repeat.
+4. As described above, we check if there is only one leaf left. In that case we are done. Otherwise we go back to 2. and repeat.
